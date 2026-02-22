@@ -9,7 +9,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "wt",
+	Use:   "treework",
 	Short: "Git worktree manager",
 	Long:  ui.Banner(),
 	Run:   runRoot,

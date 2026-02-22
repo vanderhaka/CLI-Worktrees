@@ -23,7 +23,7 @@ var (
 	BoldStyle    = lipgloss.NewStyle().Bold(true)
 )
 
-// Banner prints the wt branding header.
+// Banner prints the treework branding header.
 func Banner() string {
-	return BrandStyle.Render("wt") + MutedStyle.Render(" — git worktree manager")
+	return BrandStyle.Render("treework") + MutedStyle.Render(" — git worktree manager")
 }
