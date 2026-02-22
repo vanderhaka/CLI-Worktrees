@@ -15,6 +15,7 @@ const BackValue = "__back__"
 func keymap() *huh.KeyMap {
 	km := huh.NewDefaultKeyMap()
 	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc", "left"))
+	km.Select.Submit = key.NewBinding(key.WithKeys("enter", "right"), key.WithHelp("enter/→", "select"))
 	return km
 }
 
@@ -23,6 +24,7 @@ func keymap() *huh.KeyMap {
 func defaultKeymap() *huh.KeyMap {
 	km := huh.NewDefaultKeyMap()
 	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc"))
+	km.Select.Submit = key.NewBinding(key.WithKeys("enter", "right"), key.WithHelp("enter/→", "select"))
 	return km
 }
 
