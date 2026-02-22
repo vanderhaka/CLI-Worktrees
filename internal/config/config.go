@@ -48,7 +48,7 @@ func Save(cfg *Config) error {
 }
 
 // DevDir returns the root development directory.
-// Fallback chain: DEV_DIR env var > config file > ~/Desktop/Development.
+// Fallback chain: DEV_DIR env var > config file > ~/projects.
 func DevDir() string {
 	if d := os.Getenv("DEV_DIR"); d != "" {
 		return d
@@ -57,7 +57,7 @@ func DevDir() string {
 		return cfg.BaseDir
 	}
 	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Desktop", "Development")
+	return filepath.Join(home, "projects")
 }
 
 // Editor returns the preferred editor command.

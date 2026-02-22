@@ -1,13 +1,15 @@
 package editor
 
 import (
+	"fmt"
 	"os/exec"
+	"runtime"
 
 	"github.com/vanderhaka/treework/internal/config"
 )
 
 // Open opens the given path in the preferred editor.
-// Priority: WT_EDITOR env var > cursor > code > open (macOS).
+// Priority: WT_EDITOR env var > cursor > code > platform default.
 func Open(path string) error {
 	if ed := config.Editor(); ed != "" {
 		return run(ed, path)
@@ -19,7 +21,6 @@ func Open(path string) error {
 	}{
 		{"cursor", []string{"--new-window", path}},
 		{"code", []string{"-n", path}},
-		{"open", []string{path}},
 	}
 
 	for _, e := range editors {
@@ -28,8 +29,17 @@ func Open(path string) error {
 		}
 	}
 
-	// Fallback: open (should always exist on macOS)
-	return exec.Command("open", path).Start()
+	// Platform-specific fallback to open the folder
+	switch runtime.GOOS {
+	case "darwin":
+		return exec.Command("open", path).Start()
+	case "linux":
+		return exec.Command("xdg-open", path).Start()
+	case "windows":
+		return exec.Command("explorer", path).Start()
+	}
+
+	return fmt.Errorf("no editor found — set WT_EDITOR or install cursor/code")
 }
 
 func run(editor, path string) error {

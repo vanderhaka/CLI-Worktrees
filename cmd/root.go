@@ -46,10 +46,15 @@ func runRoot(cmd *cobra.Command, args []string) {
 		selected, err := SetBaseDir(home)
 		if err != nil {
 			// User escaped — save defaults so we don't prompt again
-			_ = config.Save(&config.Config{})
+			if saveErr := config.Save(&config.Config{}); saveErr != nil {
+				ui.Warn("Could not save config")
+			}
 		} else {
-			_ = config.Save(&config.Config{BaseDir: selected})
-			ui.Success(fmt.Sprintf("Base folder set to %s", selected))
+			if saveErr := config.Save(&config.Config{BaseDir: selected}); saveErr != nil {
+				ui.Warn("Could not save config")
+			} else {
+				ui.Success(fmt.Sprintf("Base folder set to %s", selected))
+			}
 		}
 	}
 

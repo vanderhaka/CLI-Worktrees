@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/vanderhaka/treework/internal/deps"
@@ -88,7 +87,9 @@ func doNew(args []string, direct bool) {
 	// 4. If exists → open in editor
 	if _, err := os.Stat(resolved); err == nil {
 		ui.Info(fmt.Sprintf("Already exists: %s-worktree-%s", repoName, name))
-		editor.Open(resolved)
+		if err := editor.Open(resolved); err != nil {
+			ui.Warn(fmt.Sprintf("Could not open editor: %v", err))
+		}
 		return
 	}
 
@@ -146,7 +147,6 @@ func doNew(args []string, direct bool) {
 				Title(fmt.Sprintf("Installing dependencies with %s...", pm.Name)).
 				Action(func() {
 					installErr = deps.Install(resolved, pm)
-					time.Sleep(100 * time.Millisecond)
 				}).
 				Context(context.Background()).
 				Run()
@@ -162,7 +162,9 @@ func doNew(args []string, direct bool) {
 	}
 
 	// 9. Open in editor
-	editor.Open(resolved)
+	if err := editor.Open(resolved); err != nil {
+		ui.Warn(fmt.Sprintf("Could not open editor: %v", err))
+	}
 
 	// 10. Print success
 	fmt.Println()

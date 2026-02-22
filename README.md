@@ -81,7 +81,7 @@ You can also set it via environment variable:
 export DEV_DIR=~/projects
 ```
 
-Priority: `DEV_DIR` env var > config file > `~/Desktop/Development`
+Priority: `DEV_DIR` env var > config file > `~/projects`
 
 ### Editor
 
