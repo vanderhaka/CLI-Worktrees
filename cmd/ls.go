@@ -87,8 +87,11 @@ func doLs(direct bool) {
 	}
 
 	if open {
-		editor.Open(selected)
-		ui.Success(fmt.Sprintf("Opened: %s", filepath.Base(selected)))
+		if err := editor.Open(selected); err != nil {
+			ui.Warn(fmt.Sprintf("Could not open editor: %v", err))
+		} else {
+			ui.Success(fmt.Sprintf("Opened: %s", filepath.Base(selected)))
+		}
 	} else {
 		ui.Muted(selected)
 	}
