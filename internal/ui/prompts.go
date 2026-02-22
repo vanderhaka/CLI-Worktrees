@@ -4,11 +4,37 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
 )
 
 // BackValue is the sentinel value returned when the user picks "← Back".
 const BackValue = "__back__"
+
+// keymap returns a custom huh keymap with Escape and left arrow mapped to quit (back).
+func keymap() *huh.KeyMap {
+	km := huh.NewDefaultKeyMap()
+	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc", "left"))
+	return km
+}
+
+// defaultKeymap returns the default keymap (only ctrl+c quits).
+// Used for the main menu where Escape should exit, not go back.
+func defaultKeymap() *huh.KeyMap {
+	km := huh.NewDefaultKeyMap()
+	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc"))
+	return km
+}
+
+// runField wraps a single huh field in a form with the back-enabled keymap.
+func runField(field huh.Field) error {
+	return huh.NewForm(huh.NewGroup(field)).WithKeyMap(keymap()).Run()
+}
+
+// runFieldDefault wraps a single huh field in a form with the default keymap.
+func runFieldDefault(field huh.Field) error {
+	return huh.NewForm(huh.NewGroup(field)).WithKeyMap(defaultKeymap()).Run()
+}
 
 // SelectRepo prompts the user to pick a repo from a list.
 func SelectRepo(repos []string) (string, error) {
@@ -19,24 +45,24 @@ func SelectRepo(repos []string) (string, error) {
 	}
 
 	var selected string
-	err := huh.NewSelect[string]().
+	field := huh.NewSelect[string]().
 		Title("Select a project").
 		Options(opts...).
-		Value(&selected).
-		Run()
+		Value(&selected)
 
+	err := runField(field)
 	return selected, err
 }
 
 // InputName prompts the user to enter a worktree name.
 func InputName() (string, error) {
 	var name string
-	err := huh.NewInput().
+	field := huh.NewInput().
 		Title("Worktree name").
 		Placeholder("feature-name").
-		Value(&name).
-		Run()
+		Value(&name)
 
+	err := runField(field)
 	return name, err
 }
 
@@ -59,12 +85,12 @@ func SelectWorktree(dirs []string) (string, error) {
 	}
 
 	var selected string
-	err := huh.NewSelect[string]().
+	field := huh.NewSelect[string]().
 		Title("Select a worktree").
 		Options(opts...).
-		Value(&selected).
-		Run()
+		Value(&selected)
 
+	err := runField(field)
 	return selected, err
 }
 
@@ -86,12 +112,12 @@ func SelectWorktreeDetailed(items []WorktreeDisplay) (string, error) {
 	}
 
 	var selected string
-	err := huh.NewSelect[string]().
+	field := huh.NewSelect[string]().
 		Title("Worktrees").
 		Options(opts...).
-		Value(&selected).
-		Run()
+		Value(&selected)
 
+	err := runField(field)
 	return selected, err
 }
 
@@ -103,7 +129,7 @@ func ConfirmOpen(name string) (bool, error) {
 // SelectAction prompts the user to pick an action from the interactive menu.
 func SelectAction() (string, error) {
 	var action string
-	err := huh.NewSelect[string]().
+	field := huh.NewSelect[string]().
 		Title("What would you like to do?").
 		Options(
 			huh.NewOption("Create new worktree", "new"),
@@ -112,22 +138,22 @@ func SelectAction() (string, error) {
 			huh.NewOption("Remove ALL worktrees for a repo", "clear"),
 			huh.NewOption(MutedStyle.Render("Quit"), "quit"),
 		).
-		Value(&action).
-		Run()
+		Value(&action)
 
+	err := runFieldDefault(field)
 	return action, err
 }
 
 // Confirm prompts the user for a yes/no confirmation.
 func Confirm(title string) (bool, error) {
 	var confirmed bool
-	err := huh.NewConfirm().
+	field := huh.NewConfirm().
 		Title(title).
 		Affirmative("Yes").
 		Negative("No").
-		Value(&confirmed).
-		Run()
+		Value(&confirmed)
 
+	err := runField(field)
 	return confirmed, err
 }
 
