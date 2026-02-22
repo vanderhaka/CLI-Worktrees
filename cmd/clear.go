@@ -17,6 +17,11 @@ var clearCmd = &cobra.Command{
 	Run:   runClear,
 }
 
+// runClearInteractive is called from the root menu loop.
+func runClearInteractive(cmd *cobra.Command) {
+	runClear(cmd, nil)
+}
+
 func runClear(cmd *cobra.Command, args []string) {
 	fmt.Println()
 

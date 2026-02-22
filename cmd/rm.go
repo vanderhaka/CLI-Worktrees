@@ -21,37 +21,55 @@ var rmCmd = &cobra.Command{
 
 func runRm(cmd *cobra.Command, args []string) {
 	fmt.Println()
+	doRm(true)
+}
 
+// runRmInteractive is called from the root menu loop.
+func runRmInteractive(cmd *cobra.Command) {
+	doRm(false)
+}
+
+func doRm(exitOnError bool) {
 	devDir := config.DevDir()
 	if _, err := os.Stat(devDir); err != nil {
 		ui.Error(fmt.Sprintf("DEV_DIR not found: %s", devDir))
-		os.Exit(1)
+		if exitOnError {
+			os.Exit(1)
+		}
+		return
 	}
 
 	dirs := git.FindWorktreeDirs(devDir)
 	if len(dirs) == 0 {
 		ui.Info("No worktrees found.")
-		fmt.Println()
 		return
 	}
 
 	selected, err := ui.SelectWorktree(dirs)
 	if err != nil {
 		handleAbort(err)
-		ui.Error(err.Error())
-		os.Exit(1)
+		if exitOnError {
+			os.Exit(1)
+		}
+		return
+	}
+
+	if selected == ui.BackValue {
+		return
 	}
 
 	branch := git.CurrentBranch(selected)
 	mainDir := git.MainWorktreePath(selected)
 	if mainDir == "" {
 		ui.Error("Can't find main repo for this worktree.")
-		os.Exit(1)
+		if exitOnError {
+			os.Exit(1)
+		}
+		return
 	}
 
 	ui.Info(fmt.Sprintf("Removing: %s (branch: %s)", filepath.Base(selected), branch))
 
-	// Remove worktree with spinner
 	var removeErr error
 	err = spinner.New().
 		Title("Removing worktree...").
@@ -63,13 +81,18 @@ func runRm(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		handleAbort(err)
-		ui.Error(err.Error())
-		os.Exit(1)
+		if exitOnError {
+			os.Exit(1)
+		}
+		return
 	}
 
 	if removeErr != nil {
 		ui.Error("Failed to remove worktree. Check for uncommitted changes.")
-		os.Exit(1)
+		if exitOnError {
+			os.Exit(1)
+		}
+		return
 	}
 
 	ui.Success("Removed worktree")
@@ -97,6 +120,4 @@ func runRm(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
-
-	fmt.Println()
 }

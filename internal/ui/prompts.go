@@ -7,6 +7,9 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
+// BackValue is the sentinel value returned when the user picks "← Back".
+const BackValue = "__back__"
+
 // SelectRepo prompts the user to pick a repo from a list.
 func SelectRepo(repos []string) (string, error) {
 	var opts []huh.Option[string]
@@ -45,8 +48,11 @@ type WorktreeDisplay struct {
 }
 
 // SelectWorktree prompts the user to pick a worktree from a list.
+// Returns BackValue if the user picks "← Back".
 func SelectWorktree(dirs []string) (string, error) {
-	var opts []huh.Option[string]
+	opts := []huh.Option[string]{
+		huh.NewOption(MutedStyle.Render("← Back"), BackValue),
+	}
 	for _, d := range dirs {
 		label := filepath.Base(d)
 		opts = append(opts, huh.NewOption(label, d))
@@ -63,8 +69,11 @@ func SelectWorktree(dirs []string) (string, error) {
 }
 
 // SelectWorktreeDetailed prompts the user to pick a worktree, showing branch and repo info.
+// Returns BackValue if the user picks "← Back".
 func SelectWorktreeDetailed(items []WorktreeDisplay) (string, error) {
-	var opts []huh.Option[string]
+	opts := []huh.Option[string]{
+		huh.NewOption(MutedStyle.Render("← Back"), BackValue),
+	}
 	for _, item := range items {
 		label := filepath.Base(item.Path)
 		if item.Branch != "" {
@@ -101,6 +110,7 @@ func SelectAction() (string, error) {
 			huh.NewOption("List worktrees", "ls"),
 			huh.NewOption("Remove a worktree", "rm"),
 			huh.NewOption("Remove ALL worktrees for a repo", "clear"),
+			huh.NewOption(MutedStyle.Render("Quit"), "quit"),
 		).
 		Value(&action).
 		Run()

@@ -34,22 +34,29 @@ func Execute() {
 func runRoot(cmd *cobra.Command, args []string) {
 	fmt.Println()
 	fmt.Println(ui.Banner())
-	fmt.Println()
 
-	action, err := ui.SelectAction()
-	if err != nil {
-		handleAbort(err)
-		return
-	}
+	for {
+		fmt.Println()
+		action, err := ui.SelectAction()
+		if err != nil {
+			handleAbort(err)
+			return
+		}
 
-	switch action {
-	case "new":
-		runNew(cmd, nil)
-	case "ls":
-		runLs(cmd, nil)
-	case "rm":
-		runRm(cmd, nil)
-	case "clear":
-		runClear(cmd, nil)
+		switch action {
+		case "new":
+			runNewInteractive(cmd)
+		case "ls":
+			runLsInteractive(cmd)
+		case "rm":
+			runRmInteractive(cmd)
+		case "clear":
+			runClearInteractive(cmd)
+		case "quit":
+			fmt.Println()
+			ui.Muted("Goodbye.")
+			fmt.Println()
+			return
+		}
 	}
 }

@@ -21,17 +21,27 @@ var lsCmd = &cobra.Command{
 
 func runLs(cmd *cobra.Command, args []string) {
 	fmt.Println()
+	doLs(true)
+}
 
+// runLsInteractive is called from the root menu loop. Returns instead of os.Exit.
+func runLsInteractive(cmd *cobra.Command) {
+	doLs(false)
+}
+
+func doLs(exitOnError bool) {
 	devDir := config.DevDir()
 	if _, err := os.Stat(devDir); err != nil {
 		ui.Error(fmt.Sprintf("DEV_DIR not found: %s", devDir))
-		os.Exit(1)
+		if exitOnError {
+			os.Exit(1)
+		}
+		return
 	}
 
 	dirs := git.FindWorktreeDirs(devDir)
 	if len(dirs) == 0 {
 		ui.Info("No worktrees found.")
-		fmt.Println()
 		return
 	}
 
@@ -39,7 +49,6 @@ func runLs(cmd *cobra.Command, args []string) {
 	var items []ui.WorktreeDisplay
 	for _, d := range dirs {
 		branch := git.CurrentBranch(d)
-		// Extract repo name from worktree dir name (e.g. "myapp-worktree-feat" → "myapp")
 		base := filepath.Base(d)
 		repo := extractRepoName(base)
 		items = append(items, ui.WorktreeDisplay{
@@ -52,8 +61,14 @@ func runLs(cmd *cobra.Command, args []string) {
 	selected, err := ui.SelectWorktreeDetailed(items)
 	if err != nil {
 		handleAbort(err)
-		ui.Error(err.Error())
-		os.Exit(1)
+		if exitOnError {
+			os.Exit(1)
+		}
+		return
+	}
+
+	if selected == ui.BackValue {
+		return
 	}
 
 	// Confirm before opening
@@ -65,20 +80,16 @@ func runLs(cmd *cobra.Command, args []string) {
 
 	if open {
 		editor.Open(selected)
-		fmt.Println()
 		ui.Success(fmt.Sprintf("Opened: %s", filepath.Base(selected)))
 	} else {
-		fmt.Println()
 		ui.Muted(selected)
 	}
-	fmt.Println()
 }
 
 // extractRepoName gets the repo name from a worktree dir name.
 // e.g. "myapp-worktree-feature" → "myapp"
 func extractRepoName(wtDirName string) string {
 	idx := len(wtDirName)
-	// Find "-worktree-" in the name
 	const marker = "-worktree-"
 	for i := 0; i <= len(wtDirName)-len(marker); i++ {
 		if wtDirName[i:i+len(marker)] == marker {

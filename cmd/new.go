@@ -24,6 +24,11 @@ var newCmd = &cobra.Command{
 	Run:   runNew,
 }
 
+// runNewInteractive is called from the root menu loop.
+func runNewInteractive(cmd *cobra.Command) {
+	runNew(cmd, nil)
+}
+
 func runNew(cmd *cobra.Command, args []string) {
 	fmt.Println()
 
