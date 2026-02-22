@@ -121,10 +121,11 @@ func doClear(direct bool) {
 	}
 	if len(errs) > 0 {
 		fmt.Println()
-		ui.Error("Some worktrees could not be removed:")
+		ui.Warn("Some worktrees could not be removed:")
 		for _, removeErr := range errs {
-			ui.Error(fmt.Sprintf("- %s", removeErr))
+			ui.Warn(fmt.Sprintf("- %s", removeErr))
 		}
+		ui.Warn(fmt.Sprintf("%d worktree(s) could not be removed", len(errs)))
 		return
 	}
 
