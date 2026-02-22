@@ -24,16 +24,15 @@ func runRm(cmd *cobra.Command, args []string) {
 	doRm(true)
 }
 
-// runRmInteractive is called from the root menu loop.
 func runRmInteractive(cmd *cobra.Command) {
 	doRm(false)
 }
 
-func doRm(exitOnError bool) {
+func doRm(direct bool) {
 	devDir := config.DevDir()
 	if _, err := os.Stat(devDir); err != nil {
 		ui.Error(fmt.Sprintf("DEV_DIR not found: %s", devDir))
-		if exitOnError {
+		if direct {
 			os.Exit(1)
 		}
 		return
@@ -47,8 +46,14 @@ func doRm(exitOnError bool) {
 
 	selected, err := ui.SelectWorktree(dirs)
 	if err != nil {
-		handleAbort(err)
-		if exitOnError {
+		if isAbort(err) {
+			if direct {
+				handleAbort(err)
+			}
+			return
+		}
+		ui.Error(err.Error())
+		if direct {
 			os.Exit(1)
 		}
 		return
@@ -62,7 +67,7 @@ func doRm(exitOnError bool) {
 	mainDir := git.MainWorktreePath(selected)
 	if mainDir == "" {
 		ui.Error("Can't find main repo for this worktree.")
-		if exitOnError {
+		if direct {
 			os.Exit(1)
 		}
 		return
@@ -80,8 +85,14 @@ func doRm(exitOnError bool) {
 		Run()
 
 	if err != nil {
-		handleAbort(err)
-		if exitOnError {
+		if isAbort(err) {
+			if direct {
+				handleAbort(err)
+			}
+			return
+		}
+		ui.Error(err.Error())
+		if direct {
 			os.Exit(1)
 		}
 		return
@@ -89,7 +100,7 @@ func doRm(exitOnError bool) {
 
 	if removeErr != nil {
 		ui.Error("Failed to remove worktree. Check for uncommitted changes.")
-		if exitOnError {
+		if direct {
 			os.Exit(1)
 		}
 		return
@@ -97,7 +108,6 @@ func doRm(exitOnError bool) {
 
 	ui.Success("Removed worktree")
 
-	// Branch cleanup
 	if branch != "" && branch != "HEAD" && branch != "main" && branch != "master" {
 		if git.IsBranchMerged(mainDir, branch) {
 			if err := git.DeleteBranch(mainDir, branch); err == nil {
@@ -107,7 +117,12 @@ func doRm(exitOnError bool) {
 			ui.Warn(fmt.Sprintf("Branch '%s' is not merged", branch))
 			forceDelete, err := ui.ConfirmForceDelete(branch)
 			if err != nil {
-				handleAbort(err)
+				if isAbort(err) {
+					if direct {
+						handleAbort(err)
+					}
+					return
+				}
 			}
 			if forceDelete {
 				if err := git.ForceDeleteBranch(mainDir, branch); err == nil {

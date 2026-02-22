@@ -24,19 +24,30 @@ var newCmd = &cobra.Command{
 	Run:   runNew,
 }
 
-// runNewInteractive is called from the root menu loop.
 func runNewInteractive(cmd *cobra.Command) {
-	runNew(cmd, nil)
+	doNew(nil, false)
 }
 
 func runNew(cmd *cobra.Command, args []string) {
 	fmt.Println()
+	doNew(args, true)
+}
 
+func doNew(args []string, direct bool) {
 	// 1. Resolve repo
 	repoDir, err := resolveRepo()
 	if err != nil {
+		if isAbort(err) {
+			if direct {
+				handleAbort(err)
+			}
+			return
+		}
 		ui.Error(err.Error())
-		os.Exit(1)
+		if direct {
+			os.Exit(1)
+		}
+		return
 	}
 
 	// 2. Get name
@@ -46,16 +57,27 @@ func runNew(cmd *cobra.Command, args []string) {
 	} else {
 		name, err = ui.InputName()
 		if err != nil {
-			handleAbort(err)
+			if isAbort(err) {
+				if direct {
+					handleAbort(err)
+				}
+				return
+			}
 			ui.Error(err.Error())
-			os.Exit(1)
+			if direct {
+				os.Exit(1)
+			}
+			return
 		}
 	}
 
 	name = sanitize.Name(name)
 	if name == "" {
 		ui.Error("Name became empty after sanitising.")
-		os.Exit(1)
+		if direct {
+			os.Exit(1)
+		}
+		return
 	}
 
 	// 3. Compute path
@@ -82,13 +104,24 @@ func runNew(cmd *cobra.Command, args []string) {
 		Run()
 
 	if err != nil {
-		handleAbort(err)
+		if isAbort(err) {
+			if direct {
+				handleAbort(err)
+			}
+			return
+		}
 		ui.Error(err.Error())
-		os.Exit(1)
+		if direct {
+			os.Exit(1)
+		}
+		return
 	}
 	if addErr != nil {
 		ui.Error(fmt.Sprintf("Failed to create worktree: %v", addErr))
-		os.Exit(1)
+		if direct {
+			os.Exit(1)
+		}
+		return
 	}
 
 	// 7. Copy .env files
@@ -101,26 +134,28 @@ func runNew(cmd *cobra.Command, args []string) {
 	if pm := deps.Detect(resolved); pm != nil {
 		install, err := ui.ConfirmInstall(pm.Name)
 		if err != nil {
-			handleAbort(err)
-		}
-		if install {
+			if isAbort(err) {
+				if direct {
+					handleAbort(err)
+				}
+				// Skip install but continue — worktree is already created
+			}
+		} else if install {
 			var installErr error
 			err = spinner.New().
 				Title(fmt.Sprintf("Installing dependencies with %s...", pm.Name)).
 				Action(func() {
 					installErr = deps.Install(resolved, pm)
-					// Give spinner a moment to render
 					time.Sleep(100 * time.Millisecond)
 				}).
 				Context(context.Background()).
 				Run()
 
-			if err != nil {
-				handleAbort(err)
-			}
-			if installErr != nil {
+			if err != nil && !isAbort(err) {
 				ui.Warn("Install failed. You can run it later inside the folder.")
-			} else {
+			} else if installErr != nil {
+				ui.Warn("Install failed. You can run it later inside the folder.")
+			} else if err == nil {
 				ui.Success("Dependencies installed")
 			}
 		}
@@ -133,5 +168,4 @@ func runNew(cmd *cobra.Command, args []string) {
 	fmt.Println()
 	ui.Success(fmt.Sprintf("Ready: %s-worktree-%s", repoName, name))
 	ui.Muted(resolved)
-	fmt.Println()
 }

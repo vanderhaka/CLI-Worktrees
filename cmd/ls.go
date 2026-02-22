@@ -24,16 +24,15 @@ func runLs(cmd *cobra.Command, args []string) {
 	doLs(true)
 }
 
-// runLsInteractive is called from the root menu loop. Returns instead of os.Exit.
 func runLsInteractive(cmd *cobra.Command) {
 	doLs(false)
 }
 
-func doLs(exitOnError bool) {
+func doLs(direct bool) {
 	devDir := config.DevDir()
 	if _, err := os.Stat(devDir); err != nil {
 		ui.Error(fmt.Sprintf("DEV_DIR not found: %s", devDir))
-		if exitOnError {
+		if direct {
 			os.Exit(1)
 		}
 		return
@@ -45,7 +44,6 @@ func doLs(exitOnError bool) {
 		return
 	}
 
-	// Build detailed display items with branch info
 	var items []ui.WorktreeDisplay
 	for _, d := range dirs {
 		branch := git.CurrentBranch(d)
@@ -60,8 +58,14 @@ func doLs(exitOnError bool) {
 
 	selected, err := ui.SelectWorktreeDetailed(items)
 	if err != nil {
-		handleAbort(err)
-		if exitOnError {
+		if isAbort(err) {
+			if direct {
+				handleAbort(err)
+			}
+			return // back to menu
+		}
+		ui.Error(err.Error())
+		if direct {
 			os.Exit(1)
 		}
 		return
@@ -71,10 +75,14 @@ func doLs(exitOnError bool) {
 		return
 	}
 
-	// Confirm before opening
 	open, err := ui.ConfirmOpen(filepath.Base(selected))
 	if err != nil {
-		handleAbort(err)
+		if isAbort(err) {
+			if direct {
+				handleAbort(err)
+			}
+			return
+		}
 		return
 	}
 
@@ -86,8 +94,6 @@ func doLs(exitOnError bool) {
 	}
 }
 
-// extractRepoName gets the repo name from a worktree dir name.
-// e.g. "myapp-worktree-feature" → "myapp"
 func extractRepoName(wtDirName string) string {
 	idx := len(wtDirName)
 	const marker = "-worktree-"

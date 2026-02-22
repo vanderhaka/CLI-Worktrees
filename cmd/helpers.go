@@ -32,20 +32,27 @@ func resolveRepo() (string, error) {
 
 	selected, err := ui.SelectRepo(repos)
 	if err != nil {
-		return "", handleAbort(err)
+		if isAbort(err) {
+			return "", err
+		}
+		return "", err
 	}
 
 	return selected, nil
 }
 
-// handleAbort converts huh.ErrUserAborted into a clean exit.
-func handleAbort(err error) error {
-	if errors.Is(err, huh.ErrUserAborted) {
+// isAbort checks if an error is a user abort (Escape / Ctrl+C).
+func isAbort(err error) bool {
+	return errors.Is(err, huh.ErrUserAborted)
+}
+
+// handleAbort exits the program cleanly on abort. Use for direct CLI commands only.
+func handleAbort(err error) {
+	if isAbort(err) {
 		fmt.Println()
 		ui.Muted("Cancelled.")
 		os.Exit(0)
 	}
-	return err
 }
 
 // resolveWorktreePath resolves a worktree path to an absolute path.
