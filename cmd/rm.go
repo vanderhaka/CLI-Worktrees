@@ -122,7 +122,7 @@ func doRm(direct bool) {
 	}
 
 	if removeErr != nil {
-		git.WorktreePrune(mainDir)
+		_ = git.WorktreePrune(mainDir)
 		ui.Error("Failed to remove worktree.")
 		if direct {
 			os.Exit(1)
@@ -130,13 +130,15 @@ func doRm(direct bool) {
 		return
 	}
 
-	git.WorktreePrune(mainDir)
+	_ = git.WorktreePrune(mainDir)
 	ui.Success("Removed worktree")
 
 	if branch != "" && branch != "HEAD" && branch != defaultBranch {
 		if git.IsBranchMerged(mainDir, branch) {
 			if err := git.DeleteBranch(mainDir, branch); err == nil {
 				ui.Success(fmt.Sprintf("Deleted merged branch '%s'", branch))
+			} else {
+				ui.Warn(fmt.Sprintf("Could not delete branch '%s': %v", branch, err))
 			}
 		} else {
 			ui.Warn(fmt.Sprintf("Branch '%s' is not merged", branch))
