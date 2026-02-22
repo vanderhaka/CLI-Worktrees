@@ -75,11 +75,37 @@ func doRm(direct bool) {
 
 	ui.Info(fmt.Sprintf("Removing: %s (branch: %s)", filepath.Base(selected), branch))
 
+	// Safety check: look for unsaved work before removing
+	status := git.CheckWorktreeStatus(selected)
+	forceNeeded := status.IsDirty()
+
+	if forceNeeded {
+		ui.WarnDirtyWorktree(status.HasUncommittedChanges, status.HasUnpushedCommits)
+
+		confirmed, confirmErr := ui.ConfirmDirtyRemove()
+		if confirmErr != nil {
+			if isAbort(confirmErr) {
+				if direct {
+					handleAbort(confirmErr)
+				}
+				return
+			}
+		}
+		if !confirmed {
+			ui.Muted("Kept worktree — no changes made")
+			return
+		}
+	}
+
 	var removeErr error
 	err = spinner.New().
 		Title("Removing worktree...").
 		Action(func() {
-			removeErr = git.WorktreeRemove(mainDir, selected)
+			if forceNeeded {
+				removeErr = git.WorktreeForceRemove(mainDir, selected)
+			} else {
+				removeErr = git.WorktreeRemove(mainDir, selected)
+			}
 			git.WorktreePrune(mainDir)
 		}).
 		Run()
@@ -99,7 +125,7 @@ func doRm(direct bool) {
 	}
 
 	if removeErr != nil {
-		ui.Error("Failed to remove worktree. Check for uncommitted changes.")
+		ui.Error("Failed to remove worktree.")
 		if direct {
 			os.Exit(1)
 		}

@@ -29,13 +29,48 @@ func WorktreeAdd(repoDir, wtPath, branchName string, newBranch bool) error {
 	return cmd.Run()
 }
 
-// WorktreeRemove removes a worktree. Tries normal remove first, then force.
-func WorktreeRemove(repoDir, wtPath string) error {
-	err := exec.Command("git", "-C", repoDir, "worktree", "remove", wtPath).Run()
-	if err != nil {
-		err = exec.Command("git", "-C", repoDir, "worktree", "remove", "--force", wtPath).Run()
+// WorktreeStatus describes the state of a worktree's working directory.
+type WorktreeStatus struct {
+	HasUncommittedChanges bool // Modified, staged, or untracked files
+	HasUnpushedCommits    bool // Commits not pushed to any remote
+}
+
+// CheckWorktreeStatus inspects a worktree for unsaved work.
+func CheckWorktreeStatus(wtPath string) WorktreeStatus {
+	var s WorktreeStatus
+
+	// Check for modified, staged, or untracked files
+	out, err := exec.Command("git", "-C", wtPath, "status", "--porcelain").Output()
+	if err == nil && len(strings.TrimSpace(string(out))) > 0 {
+		s.HasUncommittedChanges = true
 	}
-	return err
+
+	// Check for commits not on any remote
+	branch := CurrentBranch(wtPath)
+	if branch != "" && branch != "HEAD" {
+		out, err = exec.Command("git", "-C", wtPath, "log", branch, "--not", "--remotes", "--oneline").Output()
+		if err == nil && len(strings.TrimSpace(string(out))) > 0 {
+			s.HasUnpushedCommits = true
+		}
+	}
+
+	return s
+}
+
+// IsDirty returns true if the worktree has any unsaved work that would be lost.
+func (s WorktreeStatus) IsDirty() bool {
+	return s.HasUncommittedChanges || s.HasUnpushedCommits
+}
+
+// WorktreeRemove removes a clean worktree. Returns an error if the worktree
+// has uncommitted changes (does NOT force).
+func WorktreeRemove(repoDir, wtPath string) error {
+	return exec.Command("git", "-C", repoDir, "worktree", "remove", wtPath).Run()
+}
+
+// WorktreeForceRemove removes a worktree even if it has uncommitted changes.
+func WorktreeForceRemove(repoDir, wtPath string) error {
+	return exec.Command("git", "-C", repoDir, "worktree", "remove", "--force", wtPath).Run()
 }
 
 // WorktreePrune prunes stale worktree references.

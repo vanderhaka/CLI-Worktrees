@@ -186,6 +186,26 @@ func ConfirmForceDelete(branch string) (bool, error) {
 	return Confirm(fmt.Sprintf("Force delete unmerged branch '%s'?", branch))
 }
 
+// WarnDirtyWorktree prints user-friendly warnings about unsaved work.
+func WarnDirtyWorktree(hasUncommitted, hasUnpushed bool) {
+	fmt.Println()
+	Warn("This worktree has unsaved work!")
+	fmt.Println()
+	if hasUncommitted {
+		Muted("  • You have uncommitted changes (files you edited but didn't save with git)")
+	}
+	if hasUnpushed {
+		Muted("  • You have commits that haven't been pushed (saved locally but not backed up)")
+	}
+	fmt.Println()
+	Muted("  Removing it will permanently delete this work.")
+}
+
+// ConfirmDirtyRemove asks the user to confirm removal of a dirty worktree.
+func ConfirmDirtyRemove() (bool, error) {
+	return Confirm("Remove anyway? This cannot be undone")
+}
+
 // SelectPathMethod prompts the user to choose how to set the base folder path.
 func SelectPathMethod() (string, error) {
 	var method string
