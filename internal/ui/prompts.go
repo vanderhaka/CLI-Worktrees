@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -232,6 +233,15 @@ func InputPath(defaultPath string) (string, error) {
 	return value, err
 }
 
+// browseKeymap returns a keymap for the directory browser.
+// Esc/left go up a directory, right/enter select. Only Ctrl+C quits.
+func browseKeymap() *huh.KeyMap {
+	km := huh.NewDefaultKeyMap()
+	km.Quit = key.NewBinding(key.WithKeys("ctrl+c", "esc", "left"))
+	km.Select.Submit = key.NewBinding(key.WithKeys("enter", "right"), key.WithHelp("enter/→", "select"))
+	return km
+}
+
 // BrowseDirectory presents an interactive directory browser starting at startDir.
 // Returns the chosen directory path or an error.
 func BrowseDirectory(startDir string) (string, error) {
@@ -244,11 +254,6 @@ func BrowseDirectory(startDir string) (string, error) {
 
 		opts := []huh.Option[string]{
 			huh.NewOption(SuccessStyle.Render("✓ Use this folder"), "__select__"),
-		}
-
-		// Add parent directory option unless at filesystem root
-		if current != "/" {
-			opts = append(opts, huh.NewOption(MutedStyle.Render(".."), "__parent__"))
 		}
 
 		for _, e := range entries {
@@ -268,15 +273,22 @@ func BrowseDirectory(startDir string) (string, error) {
 			Options(opts...).
 			Value(&selected)
 
-		if err := runField(field); err != nil {
+		err = huh.NewForm(huh.NewGroup(field)).WithKeyMap(browseKeymap()).Run()
+		if err != nil {
+			// Esc/left = go up a directory (or quit if at root)
+			if errors.Is(err, huh.ErrUserAborted) {
+				if current == "/" {
+					return "", err
+				}
+				current = filepath.Dir(current)
+				continue
+			}
 			return "", err
 		}
 
 		switch selected {
 		case "__select__":
 			return current, nil
-		case "__parent__":
-			current = filepath.Dir(current)
 		default:
 			current = selected
 		}
