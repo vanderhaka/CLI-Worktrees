@@ -9,6 +9,7 @@ import (
 // Config holds persistent application settings.
 type Config struct {
 	BaseDir string `json:"base_dir"`
+	Editor  string `json:"editor,omitempty"`
 }
 
 // configPath returns the path to the config file.
@@ -60,7 +61,24 @@ func DevDir() string {
 }
 
 // Editor returns the preferred editor command.
-// Uses WT_EDITOR env var, with no default (caller handles detection).
+// Priority: WT_EDITOR env var > config file > "" (auto-detect).
 func Editor() string {
-	return os.Getenv("WT_EDITOR")
+	if e := os.Getenv("WT_EDITOR"); e != "" {
+		return e
+	}
+	if cfg := Load(); cfg.Editor != "" {
+		return cfg.Editor
+	}
+	return ""
+}
+
+// EditorSource returns the current editor and a human-readable source description.
+func EditorSource() (editor, source string) {
+	if e := os.Getenv("WT_EDITOR"); e != "" {
+		return e, "WT_EDITOR env var"
+	}
+	if cfg := Load(); cfg.Editor != "" {
+		return cfg.Editor, "config file"
+	}
+	return "", "auto-detect"
 }

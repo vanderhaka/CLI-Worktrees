@@ -46,8 +46,33 @@ func SetBaseDir(currentPath string) (string, error) {
 	}
 }
 
-// doSettings shows the current base folder and lets the user change it.
-func doSettings() {
+// SetEditor runs the shared editor-selection flow.
+// Returns the editor command string ("" for auto-detect) or an error.
+func SetEditor() (string, error) {
+	choice, err := ui.SelectEditor()
+	if err != nil {
+		return "", err
+	}
+
+	switch choice {
+	case "auto":
+		return "", nil
+	case "custom":
+		cmd, err := ui.InputEditorCommand()
+		if err != nil {
+			return "", err
+		}
+		if cmd == "" {
+			return "", nil
+		}
+		return cmd, nil
+	default:
+		return choice, nil
+	}
+}
+
+// doChangeBaseDir shows the current base folder and lets the user change it.
+func doChangeBaseDir() {
 	cfg := config.Load()
 	current := config.DevDir()
 
@@ -77,6 +102,64 @@ func doSettings() {
 	}
 
 	ui.Success(fmt.Sprintf("Base folder set to %s", selected))
+}
+
+// doChangeEditor shows the current editor and lets the user change it.
+func doChangeEditor() {
+	editor, source := config.EditorSource()
+
+	fmt.Println()
+	if editor != "" {
+		ui.Info(fmt.Sprintf("Editor: %s", editor))
+	} else {
+		ui.Info("Editor: auto-detect")
+	}
+	ui.Muted(fmt.Sprintf("(from %s)", source))
+	fmt.Println()
+
+	selected, err := SetEditor()
+	if err != nil {
+		if isAbort(err) {
+			return
+		}
+		return
+	}
+
+	cfg := config.Load()
+	cfg.Editor = selected
+	if err := config.Save(cfg); err != nil {
+		ui.Error(fmt.Sprintf("Failed to save config: %v", err))
+		return
+	}
+
+	if selected == "" {
+		ui.Success("Editor set to auto-detect")
+	} else {
+		ui.Success(fmt.Sprintf("Editor set to %s", selected))
+	}
+}
+
+// doSettings shows the settings sub-menu in a loop.
+func doSettings() {
+	for {
+		fmt.Println()
+		action, err := ui.SelectSettingsAction()
+		if err != nil {
+			if isAbort(err) {
+				return
+			}
+			return
+		}
+
+		switch action {
+		case "base_dir":
+			doChangeBaseDir()
+		case "editor":
+			doChangeEditor()
+		case ui.BackValue:
+			return
+		}
+	}
 }
 
 // runSettingsInteractive is called from the root menu.

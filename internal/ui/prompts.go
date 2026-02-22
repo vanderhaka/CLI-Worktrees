@@ -207,6 +207,51 @@ func ConfirmDirtyRemove() (bool, error) {
 	return Confirm("Remove anyway? This cannot be undone")
 }
 
+// SelectEditor prompts the user to choose their preferred editor.
+func SelectEditor() (string, error) {
+	var editor string
+	field := huh.NewSelect[string]().
+		Title("Choose your editor").
+		Options(
+			huh.NewOption("Cursor", "cursor"),
+			huh.NewOption("VS Code", "code"),
+			huh.NewOption("Auto-detect (Cursor → VS Code → Finder)", "auto"),
+			huh.NewOption("Custom command", "custom"),
+		).
+		Value(&editor)
+
+	err := runField(field)
+	return editor, err
+}
+
+// InputEditorCommand prompts the user to type a custom editor command.
+func InputEditorCommand() (string, error) {
+	var cmd string
+	field := huh.NewInput().
+		Title("Editor command").
+		Placeholder("vim").
+		Value(&cmd)
+
+	err := runField(field)
+	return strings.TrimSpace(cmd), err
+}
+
+// SelectSettingsAction prompts the user to pick a settings sub-action.
+func SelectSettingsAction() (string, error) {
+	var action string
+	field := huh.NewSelect[string]().
+		Title("Settings").
+		Options(
+			huh.NewOption("Change base folder", "base_dir"),
+			huh.NewOption("Change editor", "editor"),
+			huh.NewOption(MutedStyle.Render("← Back"), BackValue),
+		).
+		Value(&action)
+
+	err := runField(field)
+	return action, err
+}
+
 // SelectPathMethod prompts the user to choose how to set the base folder path.
 func SelectPathMethod() (string, error) {
 	var method string

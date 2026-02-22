@@ -55,10 +55,28 @@ func runRoot(cmd *cobra.Command, args []string) {
 			fmt.Println()
 			ui.Muted("Skipped — you can set it later with 'treework settings' or set DEV_DIR.")
 		} else {
-			if saveErr := config.Save(&config.Config{BaseDir: selected}); saveErr != nil {
+			cfg := &config.Config{BaseDir: selected}
+
+			// Prompt for editor choice
+			fmt.Println()
+			ui.Info("Choose your editor (you can change this later in Settings).")
+			fmt.Println()
+			editor, edErr := SetEditor()
+			if edErr != nil {
+				ui.Muted("Skipped — editor will be auto-detected. Change it in Settings.")
+			} else {
+				cfg.Editor = editor
+			}
+
+			if saveErr := config.Save(cfg); saveErr != nil {
 				ui.Warn("Could not save config")
 			} else {
 				ui.Success(fmt.Sprintf("Base folder set to %s", selected))
+				if cfg.Editor != "" {
+					ui.Success(fmt.Sprintf("Editor set to %s", cfg.Editor))
+				} else {
+					ui.Muted("Editor: auto-detect")
+				}
 			}
 		}
 	}

@@ -65,7 +65,7 @@ treework new feature-auth    # Create a worktree
 treework ls                  # List and open worktrees
 treework rm                  # Remove a worktree (with safety checks)
 treework clear               # Remove all worktrees for a repo
-treework settings            # Change your base folder
+treework settings            # Change base folder or editor
 treework version             # Print version
 ```
 
@@ -85,11 +85,15 @@ Priority: `DEV_DIR` env var > config file (no default — you must set one)
 
 ### Editor
 
-treework auto-detects Cursor and VS Code. To override:
+On first run, treework asks you to choose an editor. This is saved to `~/.config/treework/config.json` and can be changed in Settings.
+
+You can also override via environment variable:
 
 ```sh
 export WT_EDITOR=code
 ```
+
+Priority: `WT_EDITOR` env var > config file > auto-detect (Cursor → VS Code → Finder)
 
 ## How it works
 
