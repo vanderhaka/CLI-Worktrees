@@ -63,11 +63,15 @@ func runClear(cmd *cobra.Command, args []string) {
 	}
 
 	// 5. Remove each worktree
+	errs := []error{}
 	err = spinner.New().
 		Title("Removing worktrees...").
 		Action(func() {
 			for _, wt := range worktrees {
-				git.WorktreeRemove(repoDir, wt.Path)
+				if err := git.WorktreeRemove(repoDir, wt.Path); err != nil {
+					errs = append(errs, fmt.Errorf("%s: %w", filepath.Base(wt.Path), err))
+					continue
+				}
 
 				// Auto-delete merged branches
 				if wt.Branch != "" && wt.Branch != "main" && wt.Branch != "master" {
@@ -84,6 +88,14 @@ func runClear(cmd *cobra.Command, args []string) {
 		handleAbort(err)
 		ui.Error(err.Error())
 		os.Exit(1)
+	}
+	if len(errs) > 0 {
+		fmt.Println()
+		ui.Error("Some worktrees could not be removed:")
+		for _, removeErr := range errs {
+			ui.Error(fmt.Sprintf("- %s", removeErr))
+		}
+		return
 	}
 
 	fmt.Println()

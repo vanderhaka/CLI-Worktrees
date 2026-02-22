@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/huh/spinner"
 	"github.com/jamesvanderhaak/wt/internal/config"
@@ -80,7 +81,6 @@ func doRm(direct bool) {
 		Title("Removing worktree...").
 		Action(func() {
 			removeErr = git.WorktreeRemove(mainDir, selected)
-			git.WorktreePrune(mainDir)
 		}).
 		Run()
 
@@ -99,13 +99,37 @@ func doRm(direct bool) {
 	}
 
 	if removeErr != nil {
-		ui.Error("Failed to remove worktree. Check for uncommitted changes.")
+		if strings.Contains(strings.ToLower(removeErr.Error()), "unclean working tree") {
+			forceRemove, confirmErr := ui.Confirm(fmt.Sprintf("Force-remove worktree '%s' with uncommitted changes?", filepath.Base(selected)))
+			if confirmErr != nil {
+				if isAbort(confirmErr) {
+					if direct {
+						handleAbort(confirmErr)
+					}
+					return
+				}
+				ui.Error(confirmErr.Error())
+				if direct {
+					os.Exit(1)
+				}
+				return
+			}
+			if forceRemove {
+				removeErr = git.WorktreeForceRemove(mainDir, selected)
+			}
+		}
+	}
+
+	if removeErr != nil {
+		git.WorktreePrune(mainDir)
+		ui.Error("Failed to remove worktree.")
 		if direct {
 			os.Exit(1)
 		}
 		return
 	}
 
+	git.WorktreePrune(mainDir)
 	ui.Success("Removed worktree")
 
 	if branch != "" && branch != "HEAD" && branch != "main" && branch != "master" {

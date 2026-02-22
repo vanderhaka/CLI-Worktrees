@@ -29,13 +29,32 @@ func WorktreeAdd(repoDir, wtPath, branchName string, newBranch bool) error {
 	return cmd.Run()
 }
 
-// WorktreeRemove removes a worktree. Tries normal remove first, then force.
+// WorktreeRemove removes a worktree without forcing.
 func WorktreeRemove(repoDir, wtPath string) error {
-	err := exec.Command("git", "-C", repoDir, "worktree", "remove", wtPath).Run()
-	if err != nil {
-		err = exec.Command("git", "-C", repoDir, "worktree", "remove", "--force", wtPath).Run()
+	cmd := exec.Command("git", "-C", repoDir, "worktree", "remove", wtPath)
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		return nil
 	}
-	return err
+	msg := strings.TrimSpace(string(out))
+	if msg == "" {
+		return err
+	}
+	return fmt.Errorf("%s: %w", msg, err)
+}
+
+// WorktreeForceRemove force-removes a worktree.
+func WorktreeForceRemove(repoDir, wtPath string) error {
+	cmd := exec.Command("git", "-C", repoDir, "worktree", "remove", "--force", wtPath)
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		return nil
+	}
+	msg := strings.TrimSpace(string(out))
+	if msg == "" {
+		return err
+	}
+	return fmt.Errorf("%s: %w", msg, err)
 }
 
 // WorktreePrune prunes stale worktree references.
