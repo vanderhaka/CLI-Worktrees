@@ -37,6 +37,13 @@ func InputName() (string, error) {
 	return name, err
 }
 
+// WorktreeDisplay holds display info for a worktree in the selector.
+type WorktreeDisplay struct {
+	Path   string
+	Branch string
+	Repo   string
+}
+
 // SelectWorktree prompts the user to pick a worktree from a list.
 func SelectWorktree(dirs []string) (string, error) {
 	var opts []huh.Option[string]
@@ -53,6 +60,35 @@ func SelectWorktree(dirs []string) (string, error) {
 		Run()
 
 	return selected, err
+}
+
+// SelectWorktreeDetailed prompts the user to pick a worktree, showing branch and repo info.
+func SelectWorktreeDetailed(items []WorktreeDisplay) (string, error) {
+	var opts []huh.Option[string]
+	for _, item := range items {
+		label := filepath.Base(item.Path)
+		if item.Branch != "" {
+			label += MutedStyle.Render("  (" + item.Branch + ")")
+		}
+		if item.Repo != "" {
+			label += MutedStyle.Render("  " + item.Repo)
+		}
+		opts = append(opts, huh.NewOption(label, item.Path))
+	}
+
+	var selected string
+	err := huh.NewSelect[string]().
+		Title("Worktrees").
+		Options(opts...).
+		Value(&selected).
+		Run()
+
+	return selected, err
+}
+
+// ConfirmOpen prompts whether to open the selected worktree in the editor.
+func ConfirmOpen(name string) (bool, error) {
+	return Confirm(fmt.Sprintf("Open %s in editor?", name))
 }
 
 // SelectAction prompts the user to pick an action from the interactive menu.
