@@ -1,6 +1,6 @@
 package main
 
-import "github.com/jamesvanderhaak/wt/cmd"
+import "github.com/vanderhaka/treework/cmd"
 
 func main() {
 	cmd.Execute()

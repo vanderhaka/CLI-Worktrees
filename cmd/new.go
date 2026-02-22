@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/charmbracelet/huh/spinner"
-	"github.com/jamesvanderhaak/wt/internal/deps"
-	"github.com/jamesvanderhaak/wt/internal/editor"
-	"github.com/jamesvanderhaak/wt/internal/env"
-	"github.com/jamesvanderhaak/wt/internal/git"
-	"github.com/jamesvanderhaak/wt/internal/sanitize"
-	"github.com/jamesvanderhaak/wt/internal/ui"
+	"github.com/vanderhaka/treework/internal/deps"
+	"github.com/vanderhaka/treework/internal/editor"
+	"github.com/vanderhaka/treework/internal/env"
+	"github.com/vanderhaka/treework/internal/git"
+	"github.com/vanderhaka/treework/internal/sanitize"
+	"github.com/vanderhaka/treework/internal/ui"
 	"github.com/spf13/cobra"
 )
 

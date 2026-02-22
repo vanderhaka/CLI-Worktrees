@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jamesvanderhaak/wt/internal/config"
-	"github.com/jamesvanderhaak/wt/internal/ui"
+	"github.com/vanderhaka/treework/internal/config"
+	"github.com/vanderhaka/treework/internal/ui"
 	"github.com/spf13/cobra"
 )
 

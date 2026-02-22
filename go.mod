@@ -1,4 +1,4 @@
-module github.com/jamesvanderhaak/wt
+module github.com/vanderhaka/treework
 
 go 1.24.0
 

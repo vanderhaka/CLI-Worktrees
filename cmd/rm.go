@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/huh/spinner"
-	"github.com/jamesvanderhaak/wt/internal/config"
-	"github.com/jamesvanderhaak/wt/internal/git"
-	"github.com/jamesvanderhaak/wt/internal/ui"
+	"github.com/vanderhaka/treework/internal/config"
+	"github.com/vanderhaka/treework/internal/git"
+	"github.com/vanderhaka/treework/internal/ui"
 	"github.com/spf13/cobra"
 )
 

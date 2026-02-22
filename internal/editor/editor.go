@@ -3,7 +3,7 @@ package editor
 import (
 	"os/exec"
 
-	"github.com/jamesvanderhaak/wt/internal/config"
+	"github.com/vanderhaka/treework/internal/config"
 )
 
 // Open opens the given path in the preferred editor.
