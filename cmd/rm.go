@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/charmbracelet/huh/spinner"
-	"github.com/vanderhaka/treework/internal/config"
 	"github.com/vanderhaka/treework/internal/git"
 	"github.com/vanderhaka/treework/internal/ui"
 	"github.com/spf13/cobra"
@@ -29,9 +28,8 @@ func runRmInteractive(cmd *cobra.Command) {
 }
 
 func doRm(direct bool) {
-	devDir := config.DevDir()
-	if _, err := os.Stat(devDir); err != nil {
-		ui.Error(fmt.Sprintf("DEV_DIR not found: %s", devDir))
+	devDir := requireDevDir()
+	if devDir == "" {
 		if direct {
 			os.Exit(1)
 		}

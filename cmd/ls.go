@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/vanderhaka/treework/internal/config"
 	"github.com/vanderhaka/treework/internal/editor"
 	"github.com/vanderhaka/treework/internal/git"
 	"github.com/vanderhaka/treework/internal/ui"
@@ -29,9 +28,8 @@ func runLsInteractive(cmd *cobra.Command) {
 }
 
 func doLs(direct bool) {
-	devDir := config.DevDir()
-	if _, err := os.Stat(devDir); err != nil {
-		ui.Error(fmt.Sprintf("DEV_DIR not found: %s", devDir))
+	devDir := requireDevDir()
+	if devDir == "" {
 		if direct {
 			os.Exit(1)
 		}

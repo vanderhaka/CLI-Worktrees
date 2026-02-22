@@ -23,9 +23,9 @@ func resolveRepo(forceSelect bool) (string, error) {
 	}
 
 	// Scan base folder for repos
-	devDir := config.DevDir()
-	if _, err := os.Stat(devDir); err != nil {
-		return "", fmt.Errorf("DEV_DIR not found: %s", devDir)
+	devDir := requireDevDir()
+	if devDir == "" {
+		return "", fmt.Errorf("no base folder configured")
 	}
 
 	repos := git.ScanRepos(devDir)
@@ -56,6 +56,21 @@ func handleAbort(err error) {
 		ui.Muted("Cancelled.")
 		os.Exit(0)
 	}
+}
+
+// requireDevDir returns the configured base folder, or an empty string with an
+// error message if none is set. Call this before any command that needs DevDir.
+func requireDevDir() string {
+	devDir := config.DevDir()
+	if devDir == "" {
+		ui.Error("No base folder configured. Run 'treework settings' or set DEV_DIR.")
+		return ""
+	}
+	if _, err := os.Stat(devDir); err != nil {
+		ui.Error(fmt.Sprintf("Base folder not found: %s", devDir))
+		return ""
+	}
+	return devDir
 }
 
 // resolveWorktreePath resolves a worktree path to an absolute path.
